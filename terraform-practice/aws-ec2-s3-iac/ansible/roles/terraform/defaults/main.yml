@@ -1,0 +1,6 @@
+---
+terraform_binary: terraform
+
+terraform_init: true
+
+terraform_auto_approve: true

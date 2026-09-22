@@ -1,0 +1,2 @@
+[terraform]
+localhost ansible_connection=local

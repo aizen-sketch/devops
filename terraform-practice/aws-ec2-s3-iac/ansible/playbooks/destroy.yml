@@ -1,0 +1,31 @@
+---
+- name: Destroy AWS infrastructure
+  hosts: terraform
+  gather_facts: false
+
+  tasks:
+
+    - name: Check Terraform installation
+      ansible.builtin.command:
+        cmd: terraform version
+      changed_when: false
+
+    - name: Initialize Terraform
+      ansible.builtin.command:
+        cmd: terraform init
+        chdir: "{{ terraform_dir }}"
+
+    - name: Generate terraform.tfvars
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/terraform.tfvars.j2"
+        dest: "{{ terraform_dir }}/terraform.tfvars"
+        mode: "0600"
+
+    - name: Terraform destroy
+      ansible.builtin.command:
+        cmd: terraform destroy -auto-approve
+        chdir: "{{ terraform_dir }}"
+
+    - name: Destroy completed
+      ansible.builtin.debug:
+        msg: "AWS infrastructure destroyed successfully."

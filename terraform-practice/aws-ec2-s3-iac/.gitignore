@@ -1,0 +1,23 @@
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+tfplan-*
+
+# Terraform variables containing environment-specific values
+terraform.tfvars
+
+# Generated SSH private key
+*.pem
+
+# Ansible
+*.retry
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/

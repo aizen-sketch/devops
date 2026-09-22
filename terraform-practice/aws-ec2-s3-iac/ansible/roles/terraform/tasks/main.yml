@@ -1,0 +1,135 @@
+---
+- name: Check Terraform installation
+  ansible.builtin.command:
+    cmd: "{{ terraform_binary }} version"
+  register: terraform_version
+  changed_when: false
+
+- name: Display Terraform version
+  ansible.builtin.debug:
+    var: terraform_version.stdout_lines
+
+
+- name: Generate terraform.tfvars
+  ansible.builtin.template:
+    src: "{{ playbook_dir }}/../templates/terraform.tfvars.j2"
+    dest: "{{ terraform_dir }}/terraform.tfvars"
+    mode: "0600"
+
+
+- name: Initialize Terraform
+  ansible.builtin.command:
+    cmd: terraform init
+    chdir: "{{ terraform_dir }}"
+  when: terraform_init
+
+
+- name: Validate Terraform
+  ansible.builtin.command:
+    cmd: terraform validate
+    chdir: "{{ terraform_dir }}"
+  register: terraform_validate
+  changed_when: false
+
+
+- name: Display Terraform validation
+  ansible.builtin.debug:
+    var: terraform_validate.stdout
+
+
+# ============================================================
+# ALL
+# ============================================================
+
+- name: Terraform plan - ALL
+  ansible.builtin.command:
+    cmd: terraform plan -out=tfplan
+    chdir: "{{ terraform_dir }}"
+  register: terraform_plan_all
+  when: resource_action == "all"
+
+
+- name: Terraform apply - ALL
+  ansible.builtin.command:
+    cmd: terraform apply -auto-approve tfplan
+    chdir: "{{ terraform_dir }}"
+  register: terraform_apply_all
+  when: resource_action == "all"
+
+
+# ============================================================
+# S3 ONLY
+# ============================================================
+
+- name: Terraform plan - S3 only
+  ansible.builtin.command:
+    cmd: >
+      terraform plan
+      -target=aws_s3_bucket.app
+      -out=tfplan-s3
+    chdir: "{{ terraform_dir }}"
+  register: terraform_plan_s3
+  when: resource_action == "s3"
+
+
+- name: Terraform apply - S3 only
+  ansible.builtin.command:
+    cmd: terraform apply -auto-approve tfplan-s3
+    chdir: "{{ terraform_dir }}"
+  register: terraform_apply_s3
+  when: resource_action == "s3"
+
+
+# ============================================================
+# EC2 ONLY
+# ============================================================
+
+- name: Terraform plan - EC2 only
+  ansible.builtin.command:
+    cmd: >
+      terraform plan
+      -target=aws_instance.app
+      -target=aws_security_group.ec2
+      -target=aws_key_pair.ec2
+      -target=tls_private_key.ec2
+      -target=local_file.private_key
+      -out=tfplan-ec2
+    chdir: "{{ terraform_dir }}"
+  register: terraform_plan_ec2
+  when: resource_action == "ec2"
+
+
+- name: Terraform apply - EC2 only
+  ansible.builtin.command:
+    cmd: terraform apply -auto-approve tfplan-ec2
+    chdir: "{{ terraform_dir }}"
+  register: terraform_apply_ec2
+  when: resource_action == "ec2"
+
+
+# ============================================================
+# OUTPUTS
+# ============================================================
+
+- name: Get Terraform outputs
+  ansible.builtin.command:
+    cmd: terraform output -json
+    chdir: "{{ terraform_dir }}"
+  register: terraform_outputs
+  changed_when: false
+  when: resource_action in ["all", "ec2", "s3"]
+
+
+- name: Convert Terraform outputs to Ansible facts
+  ansible.builtin.set_fact:
+    terraform_output: "{{ terraform_outputs.stdout | from_json }}"
+  when:
+    - resource_action in ["all", "ec2", "s3"]
+    - terraform_outputs.stdout | length > 0
+
+
+- name: Display Terraform outputs
+  ansible.builtin.debug:
+    var: terraform_output
+  when:
+    - terraform_output is defined
