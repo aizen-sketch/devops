@@ -1,0 +1,27 @@
+---
+version: 3
+
+images:
+  base_image:
+    name: quay.io/ansible/awx-ee:latest
+
+dependencies:
+  ansible_core:
+    package_pip: ansible-core>=2.16,<2.20
+
+  ansible_runner:
+    package_pip: ansible-runner
+
+  galaxy:
+    collections:
+      - name: amazon.aws
+
+  python:
+    - boto3
+    - botocore
+
+additional_build_steps:
+  append_final:
+    - RUN curl -fsSL https://releases.hashicorp.com/terraform/1.13.4/terraform_1.13.4_linux_amd64.zip -o /tmp/terraform.zip
+    - RUN unzip /tmp/terraform.zip -d /usr/local/bin
+    - RUN rm -f /tmp/terraform.zip
