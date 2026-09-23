@@ -1,19 +1,32 @@
 ---
-- name: Destroy AWS infrastructure
+- name: Destroy AWS infrastructure using Terraform
   hosts: terraform
   gather_facts: false
 
+  vars:
+    terraform_dir: "{{ playbook_dir }}/../../terraform"
+    tools_dir: "/runner/project/.tools"
+    terraform_binary: "/runner/project/.tools/terraform"
+    aws_binary: "/runner/project/.tools/aws"
+    terraform_version: "1.13.4"
+
+    aws_region: "us-east-1"
+    vpc_cidr: "10.0.0.0/16"
+    public_subnet_cidr: "10.0.1.0/24"
+    availability_zone: "us-east-1a"
+    bucket_name: "partha-todo-app-2026"
+    instance_type: "t3.micro"
+    key_name: "todo-ec2-key"
+
   tasks:
 
-    - name: Check Terraform installation
-      ansible.builtin.command:
-        cmd: terraform version
-      changed_when: false
+    - name: Install AWS CLI
+      ansible.builtin.include_tasks:
+        file: "../tasks/install-awscli.yml"
 
-    - name: Initialize Terraform
-      ansible.builtin.command:
-        cmd: terraform init
-        chdir: "{{ terraform_dir }}"
+    - name: Install Terraform
+      ansible.builtin.include_tasks:
+        file: "../tasks/install-terraform.yml"
 
     - name: Generate terraform.tfvars
       ansible.builtin.template:
@@ -21,11 +34,26 @@
         dest: "{{ terraform_dir }}/terraform.tfvars"
         mode: "0600"
 
-    - name: Terraform destroy
+    - name: Initialize Terraform
       ansible.builtin.command:
-        cmd: terraform destroy -auto-approve
+        cmd: "{{ terraform_binary }} init"
         chdir: "{{ terraform_dir }}"
 
-    - name: Destroy completed
+    - name: Verify AWS credentials
+      ansible.builtin.command:
+        cmd: "{{ aws_binary }} sts get-caller-identity --region {{ aws_region }}"
+      register: aws_identity
+      changed_when: false
+
+    - name: Display AWS identity
+      ansible.builtin.debug:
+        var: aws_identity.stdout
+
+    - name: Terraform destroy
+      ansible.builtin.command:
+        cmd: "{{ terraform_binary }} destroy -auto-approve"
+        chdir: "{{ terraform_dir }}"
+
+    - name: Display destroy result
       ansible.builtin.debug:
         msg: "AWS infrastructure destroyed successfully."
