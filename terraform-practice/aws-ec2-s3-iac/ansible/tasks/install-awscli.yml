@@ -1,18 +1,68 @@
 ---
-# Reusable task file to install AWS CLI
-# Include this in any playbook that needs AWS CLI
+- name: Create tools directory
+  ansible.builtin.file:
+    path: "{{ tools_dir }}"
+    state: directory
+    mode: "0755"
 
-- name: "Check if AWS CLI is installed"
+- name: Check whether AWS CLI already exists
   ansible.builtin.stat:
-    path: ~/.local/bin/aws
-  register: awscli_check
+    path: "{{ aws_binary }}"
+  register: aws_cli_binary
 
-- name: "Install AWS CLI"
-  ansible.builtin.shell: |
-    cd /tmp
-    curl -sL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-    unzip -o awscliv2.zip
-    ./aws/install -i ~/.local/aws-cli -b ~/.local/bin
-    rm -rf aws awscliv2.zip
-  when: not awscli_check.stat.exists
-  changed_when: true
+- name: Detect system architecture
+  ansible.builtin.command:
+    cmd: uname -m
+  register: aws_arch_command
+  changed_when: false
+  when: not aws_cli_binary.stat.exists
+
+- name: Set AWS CLI architecture
+  ansible.builtin.set_fact:
+    aws_cli_arch: >-
+      {{ 'aarch64' if aws_arch_command.stdout in ['aarch64', 'arm64']
+         else 'x86_64' }}
+  when: not aws_cli_binary.stat.exists
+
+- name: Download AWS CLI
+  ansible.builtin.get_url:
+    url: "https://awscli.amazonaws.com/awscli-exe-linux-{{ aws_cli_arch }}.zip"
+    dest: "/tmp/awscliv2.zip"
+    mode: "0644"
+  when: not aws_cli_binary.stat.exists
+
+- name: Extract AWS CLI
+  ansible.builtin.unarchive:
+    src: "/tmp/awscliv2.zip"
+    dest: "/tmp"
+    remote_src: true
+  when: not aws_cli_binary.stat.exists
+
+- name: Install AWS CLI
+  ansible.builtin.command:
+    cmd: >
+      /tmp/aws/install
+      --install-dir {{ tools_dir }}/aws-cli
+      --bin-dir {{ tools_dir }}
+      --update
+  when: not aws_cli_binary.stat.exists
+
+- name: Verify AWS CLI binary
+  ansible.builtin.stat:
+    path: "{{ aws_binary }}"
+  register: aws_cli_after_install
+
+- name: Fail if AWS CLI was not installed
+  ansible.builtin.fail:
+    msg: "AWS CLI was not installed at {{ aws_binary }}"
+  when: not aws_cli_after_install.stat.exists
+
+- name: Check AWS CLI version
+  ansible.builtin.command:
+    cmd: "{{ aws_binary }} --version"
+  register: aws_cli_version
+  changed_when: false
+
+- name: Display AWS CLI version
+  ansible.builtin.debug:
+    var: aws_cli_version.stdout

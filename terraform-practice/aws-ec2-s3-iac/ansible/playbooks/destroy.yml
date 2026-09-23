@@ -23,7 +23,15 @@
   - name: Install AWS CLI
     ansible.builtin.include_tasks:
       file: "../tasks/install-awscli.yml"
+  - name: Verify AWS CLI path
+    ansible.builtin.command:
+      cmd: ls -l /runner/project/.tools
+    register: tools_contents
+    changed_when: false
 
+  - name: Display tools directory
+    ansible.builtin.debug:
+      var: tools_contents.stdout
   - name: Install Terraform
     ansible.builtin.include_tasks:
       file: "../tasks/install-terraform.yml"
