@@ -3,8 +3,19 @@
   hosts: terraform
   gather_facts: false
 
-  roles:
-    - terraform
+  tasks:
+
+    - name: Include Terraform tasks
+      ansible.builtin.include_tasks:
+        file: "../tasks/install-awscli.yml"
+
+    - name: Include Terraform installation
+      ansible.builtin.include_tasks:
+        file: "../tasks/install-terraform.yml"
+
+    - name: Include Terraform deployment
+      ansible.builtin.include_tasks:
+        file: "../tasks/terraform.yml"
 
   post_tasks:
 
