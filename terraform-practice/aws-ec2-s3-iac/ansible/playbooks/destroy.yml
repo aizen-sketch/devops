@@ -20,40 +20,40 @@
 
   tasks:
 
-    - name: Install AWS CLI
-      ansible.builtin.include_tasks:
-        file: "../tasks/install-awscli.yml"
+  - name: Install AWS CLI
+    ansible.builtin.include_tasks:
+      file: "../tasks/install-awscli.yml"
 
-    - name: Install Terraform
-      ansible.builtin.include_tasks:
-        file: "../tasks/install-terraform.yml"
+  - name: Install Terraform
+    ansible.builtin.include_tasks:
+      file: "../tasks/install-terraform.yml"
 
-    - name: Generate terraform.tfvars
-      ansible.builtin.template:
-        src: "{{ playbook_dir }}/../templates/terraform.tfvars.j2"
-        dest: "{{ terraform_dir }}/terraform.tfvars"
-        mode: "0600"
+  - name: Generate terraform.tfvars
+    ansible.builtin.template:
+      src: "{{ playbook_dir }}/../templates/terraform.tfvars.j2"
+      dest: "{{ terraform_dir }}/terraform.tfvars"
+      mode: "0600"
 
-    - name: Initialize Terraform
-      ansible.builtin.command:
-        cmd: "{{ terraform_binary }} init"
-        chdir: "{{ terraform_dir }}"
+  - name: Initialize Terraform
+    ansible.builtin.command:
+      cmd: "{{ terraform_binary }} init"
+      chdir: "{{ terraform_dir }}"
 
-    - name: Verify AWS credentials
-      ansible.builtin.command:
-        cmd: "{{ aws_binary }} sts get-caller-identity --region {{ aws_region }}"
-      register: aws_identity
-      changed_when: false
+  - name: Verify AWS credentials
+    ansible.builtin.command:
+      cmd: "{{ aws_binary }} sts get-caller-identity --region {{ aws_region }}"
+    register: aws_identity
+    changed_when: false
 
-    - name: Display AWS identity
-      ansible.builtin.debug:
-        var: aws_identity.stdout
+  - name: Display AWS identity
+    ansible.builtin.debug:
+      var: aws_identity.stdout
 
-    - name: Terraform destroy
-      ansible.builtin.command:
-        cmd: "{{ terraform_binary }} destroy -auto-approve"
-        chdir: "{{ terraform_dir }}"
+  - name: Terraform destroy
+    ansible.builtin.command:
+      cmd: "{{ terraform_binary }} destroy -auto-approve"
+      chdir: "{{ terraform_dir }}"
 
-    - name: Display destroy result
-      ansible.builtin.debug:
+  - name: Display destroy result
+    ansible.builtin.debug:
         msg: "AWS infrastructure destroyed successfully."
