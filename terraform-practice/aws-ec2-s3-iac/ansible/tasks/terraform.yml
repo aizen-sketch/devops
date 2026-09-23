@@ -1,0 +1,47 @@
+---
+- name: Generate terraform.tfvars
+  ansible.builtin.template:
+    src: "{{ playbook_dir }}/../templates/terraform.tfvars.j2"
+    dest: "{{ terraform_dir }}/terraform.tfvars"
+    mode: "0600"
+
+- name: Initialize Terraform
+  ansible.builtin.command:
+    cmd: "{{ terraform_binary }} init"
+    chdir: "{{ terraform_dir }}"
+
+- name: Validate Terraform
+  ansible.builtin.command:
+    cmd: "{{ terraform_binary }} validate"
+    chdir: "{{ terraform_dir }}"
+  register: terraform_validate
+  changed_when: false
+
+- name: Display Terraform validation
+  ansible.builtin.debug:
+    var: terraform_validate.stdout
+
+- name: Terraform plan
+  ansible.builtin.command:
+    cmd: "{{ terraform_binary }} plan -out=tfplan"
+    chdir: "{{ terraform_dir }}"
+
+- name: Terraform apply
+  ansible.builtin.command:
+    cmd: "{{ terraform_binary }} apply -auto-approve tfplan"
+    chdir: "{{ terraform_dir }}"
+
+- name: Get Terraform outputs
+  ansible.builtin.command:
+    cmd: "{{ terraform_binary }} output -json"
+    chdir: "{{ terraform_dir }}"
+  register: terraform_outputs
+  changed_when: false
+
+- name: Convert Terraform outputs to Ansible facts
+  ansible.builtin.set_fact:
+    terraform_output: "{{ terraform_outputs.stdout | from_json }}"
+
+- name: Display Terraform outputs
+  ansible.builtin.debug:
+    var: terraform_output

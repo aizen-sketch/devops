@@ -5,52 +5,14 @@
 
   tasks:
 
-    - name: Include Terraform tasks
+    - name: Install AWS CLI
       ansible.builtin.include_tasks:
         file: "../tasks/install-awscli.yml"
 
-    - name: Include Terraform installation
+    - name: Install Terraform
       ansible.builtin.include_tasks:
         file: "../tasks/install-terraform.yml"
 
-    - name: Include Terraform deployment
+    - name: Deploy Terraform infrastructure
       ansible.builtin.include_tasks:
         file: "../tasks/terraform.yml"
-
-  post_tasks:
-
-    - name: Display S3 bucket
-      ansible.builtin.debug:
-        msg: >
-          S3 Bucket:
-          {{ terraform_output.s3_bucket_name.value }}
-      when:
-        - terraform_output is defined
-        - terraform_output.s3_bucket_name is defined
-
-    - name: Display EC2 instance ID
-      ansible.builtin.debug:
-        msg: >
-          EC2 Instance ID:
-          {{ terraform_output.ec2_instance_id.value }}
-      when:
-        - terraform_output is defined
-        - terraform_output.ec2_instance_id is defined
-
-    - name: Display EC2 public IP
-      ansible.builtin.debug:
-        msg: >
-          EC2 Public IP:
-          {{ terraform_output.ec2_public_ip.value }}
-      when:
-        - terraform_output is defined
-        - terraform_output.ec2_public_ip is defined
-
-    - name: Display EC2 public DNS
-      ansible.builtin.debug:
-        msg: >
-          EC2 Public DNS:
-          {{ terraform_output.ec2_public_dns.value }}
-      when:
-        - terraform_output is defined
-        - terraform_output.ec2_public_dns is defined
