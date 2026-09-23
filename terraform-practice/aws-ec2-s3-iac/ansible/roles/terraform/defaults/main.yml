@@ -1,6 +1,8 @@
 ---
-terraform_binary: terraform
+terraform_version: "1.13.4"
 
-terraform_init: true
+tools_dir: "/runner/project/.tools"
 
-terraform_auto_approve: true
+terraform_binary: "/runner/project/.tools/terraform"
+
+aws_binary: "/runner/project/.tools/aws"

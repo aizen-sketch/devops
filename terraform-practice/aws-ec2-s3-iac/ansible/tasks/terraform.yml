@@ -4,6 +4,15 @@
     src: "{{ playbook_dir }}/../templates/terraform.tfvars.j2"
     dest: "{{ terraform_dir }}/terraform.tfvars"
     mode: "0600"
+- name: Check Terraform binary
+  ansible.builtin.command:
+    cmd: "{{ terraform_binary }} version"
+  register: terraform_check
+  changed_when: false
+
+- name: Display Terraform
+  ansible.builtin.debug:
+    var: terraform_check.stdout
 
 - name: Initialize Terraform
   ansible.builtin.command:

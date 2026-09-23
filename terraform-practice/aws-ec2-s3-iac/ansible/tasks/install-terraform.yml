@@ -1,19 +1,58 @@
 ---
-# Reusable task file to install Terraform
+- name: Create tools directory
+  ansible.builtin.file:
+    path: "{{ tools_dir }}"
+    state: directory
+    mode: "0755"
 
-- name: "Check if Terraform is installed"
+- name: Detect system architecture
+  ansible.builtin.command:
+    cmd: uname -m
+  register: system_arch
+  changed_when: false
+
+- name: Set Terraform architecture
+  ansible.builtin.set_fact:
+    terraform_arch: >-
+      {{ 'arm64' if system_arch.stdout in ['aarch64', 'arm64']
+         else 'amd64' }}
+
+- name: Check Terraform binary
   ansible.builtin.stat:
-    path: ~/.local/bin/terraform
-  register: terraform_check
+    path: "{{ terraform_binary }}"
+  register: terraform_binary_stat
 
-- name: "Install Terraform"
-  ansible.builtin.shell: |
-    cd /tmp
-    curl -sL https://releases.hashicorp.com/terraform/1.6.6/terraform_1.6.6_linux_amd64.zip -o terraform.zip
-    unzip -o terraform.zip
-    chmod +x terraform
-    mkdir -p ~/.local/bin
-    mv terraform ~/.local/bin/terraform
-    rm -f terraform.zip
-  when: not terraform_check.stat.exists
-  changed_when: true
+- name: Download Terraform
+  ansible.builtin.get_url:
+    url: "https://releases.hashicorp.com/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_linux_{{ terraform_arch }}.zip"
+    dest: "/tmp/terraform.zip"
+    mode: "0644"
+  when: not terraform_binary_stat.stat.exists
+
+- name: Extract Terraform
+  ansible.builtin.unarchive:
+    src: "/tmp/terraform.zip"
+    dest: "{{ tools_dir }}"
+    remote_src: true
+    mode: "0755"
+  when: not terraform_binary_stat.stat.exists
+
+- name: Verify Terraform binary exists
+  ansible.builtin.stat:
+    path: "{{ terraform_binary }}"
+  register: terraform_after_install
+
+- name: Fail if Terraform was not installed
+  ansible.builtin.fail:
+    msg: "Terraform binary was not found at {{ terraform_binary }}"
+  when: not terraform_after_install.stat.exists
+
+- name: Check Terraform version
+  ansible.builtin.command:
+    cmd: "{{ terraform_binary }} version"
+  register: terraform_version_output
+  changed_when: false
+
+- name: Display Terraform version
+  ansible.builtin.debug:
+    var: terraform_version_output.stdout
