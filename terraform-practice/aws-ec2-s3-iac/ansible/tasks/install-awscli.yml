@@ -1,0 +1,18 @@
+---
+# Reusable task file to install AWS CLI
+# Include this in any playbook that needs AWS CLI
+
+- name: "Check if AWS CLI is installed"
+  ansible.builtin.stat:
+    path: ~/.local/bin/aws
+  register: awscli_check
+
+- name: "Install AWS CLI"
+  ansible.builtin.shell: |
+    cd /tmp
+    curl -sL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    unzip -o awscliv2.zip
+    ./aws/install -i ~/.local/aws-cli -b ~/.local/bin
+    rm -rf aws awscliv2.zip
+  when: not awscli_check.stat.exists
+  changed_when: true

@@ -1,0 +1,9 @@
+---
+# Reusable task file to install Ansible collections
+
+- name: "Install required Ansible collections"
+  ansible.builtin.command:
+    cmd: ansible-galaxy collection install community.general amazon.aws community.aws -p ~/.ansible/collections --force
+  run_once: true
+  changed_when: false
+  ignore_errors: true
