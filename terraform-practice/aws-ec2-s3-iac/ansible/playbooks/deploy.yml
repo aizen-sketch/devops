@@ -4,15 +4,28 @@
   gather_facts: false
 
   vars:
+    # Terraform paths
     terraform_dir: "{{ playbook_dir }}/../../terraform"
-
     tools_dir: "/runner/project/.tools"
-
     terraform_binary: "/runner/project/.tools/terraform"
 
+    # AWS CLI
     aws_binary: "/runner/project/.tools/aws"
 
+    # Terraform version
     terraform_version: "1.13.4"
+
+    # AWS configuration
+    aws_region: "us-east-1"
+
+    # VPC configuration
+    vpc_cidr: "10.0.0.0/16"
+    public_subnet_cidr: "10.0.1.0/24"
+    availability_zone: "us-east-1a"
+
+    # AWS resources
+    bucket_name: "partha-todo-app-2026"
+    instance_type: "t3.micro"
 
   tasks:
 
