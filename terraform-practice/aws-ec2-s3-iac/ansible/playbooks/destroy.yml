@@ -56,6 +56,16 @@
   - name: Display AWS identity
     ansible.builtin.debug:
       var: aws_identity.stdout
+  - name: Show Terraform state
+    ansible.builtin.command:
+      cmd: "{{ terraform_binary }} state list"
+      chdir: "{{ terraform_dir }}"
+    register: terraform_state
+    changed_when: false
+
+  - name: Display Terraform state
+    ansible.builtin.debug:
+      var: terraform_state.stdout
 
   - name: Terraform destroy
     ansible.builtin.command:
